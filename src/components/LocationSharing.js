@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { GoogleMap, LoadScript, Marker, InfoWindow } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
 
 const mapContainerStyle = {
   width: '100%',
@@ -9,7 +9,6 @@ const mapContainerStyle = {
 const libraries = ['places'];
 
 function LocationSharing() {
-
   const [location, setLocation] = useState({ latitude: null, longitude: null });
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
@@ -17,11 +16,21 @@ function LocationSharing() {
   const [isLoading, setIsLoading] = useState(true);
   const [nearbyPlace, setNearbyPlace] = useState(null);
 
-  const getNearbyPlace = useCallback((lat, lng) => {
-    if (!window.google || !window.google.maps || !window.google.maps.places) {
+  const { isLoaded, loadError } = useJsApiLoader({
+    googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
+    libraries: libraries,
+  });
+
+  useEffect(() => {
+    if (isLoaded) {
+      console.log('Google Maps API is loaded');
+    } else {
       console.error('Google Maps API is not loaded');
-      return;
     }
+  }, [isLoaded]);
+
+  const getNearbyPlace = useCallback((lat, lng) => {
+    if (!isLoaded) return;
 
     const service = new window.google.maps.places.PlacesService(document.createElement('div'));
     const request = {
@@ -32,14 +41,15 @@ function LocationSharing() {
 
     service.nearbySearch(request, (results, status) => {
       if (status === window.google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
+        console.log('Nearby place found:', results[0]);
         setNearbyPlace(results[0]);
       } else {
         console.error('Failed to fetch nearby place:', status);
         setNearbyPlace(null);
       }
     });
-  }, []);
-
+  }, [isLoaded]);
+  
   useEffect(() => {
     if (!navigator.geolocation) {
       setError('Geolocation is not supported by your browser');
@@ -120,6 +130,14 @@ function LocationSharing() {
     };
   }, [accuracyMode, getNearbyPlace]);
 
+  if (loadError) {
+    return <div>Error loading maps: {loadError.message}</div>;
+  }
+
+  if (!isLoaded) {
+    return <div>Loading maps...</div>;
+  }
+
   if (isLoading) {
     return <p>位置情報を取得中...</p>;
   }
@@ -140,27 +158,36 @@ function LocationSharing() {
           {nearbyPlace && (
             <p>近くの場所: {nearbyPlace.name} ({nearbyPlace.types.join(', ')})</p>
           )}
-          <LoadScript
-            googleMapsApiKey="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-            libraries={libraries}
-            onLoad={() => getNearbyPlace(location.latitude, location.longitude)}
+          <GoogleMap
+            mapContainerStyle={mapContainerStyle}
+            center={{lat: location.latitude, lng: location.longitude}}
+            zoom={15}
           >
-            <GoogleMap
-              mapContainerStyle={mapContainerStyle}
-              center={{lat: location.latitude, lng: location.longitude}}
-              zoom={15}
-            >
-              <Marker position={{lat: location.latitude, lng: location.longitude}} />
-              {nearbyPlace && (
-                <InfoWindow position={{lat: nearbyPlace.geometry.location.lat(), lng: nearbyPlace.geometry.location.lng()}}>
-                  <div>
-                    <h3>{nearbyPlace.name}</h3>
-                    <p>{nearbyPlace.vicinity}</p>
-                  </div>
-                </InfoWindow>
-              )}
-            </GoogleMap>
-          </LoadScript>
+          <Marker 
+            position={{lat: location.latitude, lng: location.longitude}}
+            label={{
+            text: '',
+            color: 'white',
+            fontSize: '14px',
+            fontWeight: 'bold'
+            }}
+            icon={{
+            path: window.google.maps.SymbolPath.CIRCLE,
+            scale: 10,
+            fillColor: 'red',
+            fillOpacity: 1,
+            strokeWeight: 0
+            }}
+          />
+            {nearbyPlace && (
+              <InfoWindow position={{lat: nearbyPlace.geometry.location.lat(), lng: nearbyPlace.geometry.location.lng()}}>
+                <div>
+                  <h3>{nearbyPlace.name}</h3>
+                  <p>{nearbyPlace.vicinity}</p>
+                </div>
+              </InfoWindow>
+            )}
+          </GoogleMap>
         </div>
       ) : (
         <p>位置情報を取得できませんでした。</p>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader, MarkerF, InfoWindow } from '@react-google-maps/api';
 import { ErrorBoundary } from 'react-error-boundary';
 
 const mapContainerStyle = {
@@ -9,7 +9,7 @@ const mapContainerStyle = {
 
 const libraries = ['places'];
 
-function ErrorFallback({error}) {
+function ErrorFallback({ error }) {
   return (
     <div>
       <h1>Something went wrong:</h1>
@@ -60,16 +60,16 @@ function LocationSharing() {
       console.log('Google Maps API not loaded yet');
       return;
     }
-  
+
     const service = new window.google.maps.places.PlacesService(document.createElement('div'));
     const request = {
       location: new window.google.maps.LatLng(lat, lng),
       rankBy: window.google.maps.places.RankBy.DISTANCE,
       types: ['point_of_interest']
     };
-  
+
     console.log('Sending nearby search request:', request);
-  
+
     service.nearbySearch(request, (results, status) => {
       console.log('Nearby search results:', results, 'Status:', status);
       if (status === window.google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
@@ -81,14 +81,14 @@ function LocationSharing() {
       }
     });
   }, [isLoaded]);
-  
+
   useEffect(() => {
     if (!navigator.geolocation) {
       setError('Geolocation is not supported by your browser');
       setIsLoading(false);
       return;
     }
-    
+
     const highAccuracyOptions = {
       enableHighAccuracy: true,
       timeout: 10000,
@@ -192,48 +192,52 @@ function LocationSharing() {
           {nearbyPlace && (
             <p>近くの場所: {nearbyPlace.name} ({nearbyPlace.types.join(', ')})</p>
           )}
-        <ErrorBoundary FallbackComponent={ErrorFallback}>
-        <GoogleMap
-          mapContainerStyle={mapContainerStyle}
-          center={{lat: location.latitude, lng: location.longitude}}
-          zoom={15}
-          onLoad={() => console.log('Map loaded')}
-        >
-          {console.log('Rendering map with center:', {lat: location.latitude, lng: location.longitude})}
-          <Marker 
-            position={{lat: location.latitude, lng: location.longitude}}
-            onClick={() => setSelectedPlace(nearbyPlace)}
-              icon={window.google && window.google.maps ? {
-                path: window.google.maps.SymbolPath.CIRCLE,
-                scale: 10,
-                fillColor: 'red',
-                fillOpacity: 1,
-                strokeWeight: 0
-              } : null}
-              label={{
-                text: '',
-                color: 'white',
-                fontSize: '14px',
-                fontWeight: 'bold'
-              }}
-            />
-            {console.log('Marker position:', {lat: location.latitude, lng: location.longitude})}
-            {selectedPlace && selectedPlace.geometry && (
-              <InfoWindow
-                position={{
-                  lat: selectedPlace.geometry.location.lat(),
-                  lng: selectedPlace.geometry.location.lng()
+          <ErrorBoundary FallbackComponent={ErrorFallback}>
+            <GoogleMap
+              mapContainerStyle={mapContainerStyle}
+              center={{ lat: location.latitude, lng: location.longitude }}
+              zoom={15}
+              onLoad={() => console.log('Map loaded')}
+            >
+              {console.log('Rendering map with center:', { lat: location.latitude, lng: location.longitude })}
+              <MarkerF
+                position={{ lat: location.latitude, lng: location.longitude }}
+                onClick={() => setSelectedPlace(nearbyPlace)}
+                icon={
+                  isLoaded
+                    ? {
+                      path: window.google.maps.SymbolPath.CIRCLE,
+                      scale: 10,
+                      fillColor: 'red',
+                      fillOpacity: 1,
+                      strokeWeight: 0
+                    }
+                    : undefined
+                }
+                label={{
+                  text: '',
+                  color: 'white',
+                  fontSize: '14px',
+                  fontWeight: 'bold'
                 }}
-                onCloseClick={() => setSelectedPlace(null)}
-              >
-                <div style={{ minWidth: '200px', minHeight: '100px' }}>
-                  <h3>{selectedPlace.name || 'No Name'}</h3>
-                  <p>{selectedPlace.vicinity || 'No Address'}</p>
-                </div>
-              </InfoWindow>
-            )}
-            {console.log('Marker position:', {lat: location.latitude, lng: location.longitude})}
-          </GoogleMap>
+              />
+              {console.log('Marker position:', { lat: location.latitude, lng: location.longitude })}
+              {selectedPlace && selectedPlace.geometry && (
+                <InfoWindow
+                  position={{
+                    lat: selectedPlace.geometry.location.lat(),
+                    lng: selectedPlace.geometry.location.lng()
+                  }}
+                  onCloseClick={() => setSelectedPlace(null)}
+                >
+                  <div style={{ minWidth: '200px', minHeight: '100px' }}>
+                    <h3>{selectedPlace.name || 'No Name'}</h3>
+                    <p>{selectedPlace.vicinity || 'No Address'}</p>
+                  </div>
+                </InfoWindow>
+              )}
+              {console.log('Marker position:', { lat: location.latitude, lng: location.longitude })}
+            </GoogleMap>
           </ErrorBoundary>
         </div>
       ) : (

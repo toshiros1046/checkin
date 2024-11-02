@@ -5,7 +5,7 @@ import LocationSharing from './components/LocationSharing';
 function App() {
   return (
     <div className="App">
-      <h1>位置情報共有アプリ</h1>
+      <h1>checkin</h1>
       <LocationSharing />
     </div>
   );

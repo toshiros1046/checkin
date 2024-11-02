@@ -33,11 +33,7 @@ function LocationSharing() {
   });
 
   useEffect(() => {
-    if (isLoaded) {
-      console.log('Google Maps API is loaded');
-    } else {
-      console.error('Google Maps API is not loaded');
-    }
+    if (isLoaded) { console.log('Google Maps API is loaded'); }
   }, [isLoaded]);
 
   useEffect(() => {
@@ -56,27 +52,25 @@ function LocationSharing() {
 
   const getNearbyPlace = useCallback((lat, lng) => {
     console.log('getNearbyPlace called with:', lat, lng);
-    if (!isLoaded) {
-      console.log('Google Maps API not loaded yet');
-      return;
-    }
+    if (!isLoaded) { return; }
 
     const service = new window.google.maps.places.PlacesService(document.createElement('div'));
     const request = {
       location: new window.google.maps.LatLng(lat, lng),
       rankBy: window.google.maps.places.RankBy.DISTANCE,
-      types: ['point_of_interest']
+      types: ['point_of_interest'],
+      language: "ja"
     };
 
     console.log('Sending nearby search request:', request);
 
     service.nearbySearch(request, (results, status) => {
-      console.log('Nearby search results:', results, 'Status:', status);
+      // console.log('Nearby search results:', results, 'Status:', status);
       if (status === window.google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
         console.log('Nearby place found:', results[0]);
         setNearbyPlace(results[0]);
       } else {
-        console.error('Failed to fetch nearby place:', status);
+        // console.error('Failed to fetch nearby place:', status);
         setNearbyPlace(null);
       }
     });
@@ -102,8 +96,7 @@ function LocationSharing() {
     };
 
     const successCallback = (position) => {
-      console.log('Position:', position);
-      const now = new Date();
+      // console.log('Position:', position);
       const newLocation = {
         latitude: position.coords.latitude,
         longitude: position.coords.longitude,
@@ -111,7 +104,7 @@ function LocationSharing() {
       };
       console.log('New location:', newLocation);
       setLocation(newLocation);
-      setLastUpdated(now);
+      setLastUpdated(new Date());
       setIsLoading(false);
       getNearbyPlace(newLocation.latitude, newLocation.longitude);
     };
@@ -120,9 +113,9 @@ function LocationSharing() {
       if (error.code === error.TIMEOUT) {
         if (accuracyMode === 'high') {
           setAccuracyMode('low');
-          setError('高精度モードでタイムアウトしました。低精度モードに切り替えます。');
+          // setError('高精度モードでタイムアウトしました。低精度モードに切り替えます。');
         } else {
-          setError('位置情報の取得に失敗しました。もう一度お試しください。');
+          // setError('位置情報の取得に失敗しました。もう一度お試しください。');
         }
       } else {
         setError(`エラー: ${error.message}`);
@@ -199,7 +192,7 @@ function LocationSharing() {
               zoom={15}
               onLoad={() => console.log('Map loaded')}
             >
-              {console.log('Rendering map with center:', { lat: location.latitude, lng: location.longitude })}
+              {/* {console.log('Rendering map with center:', { lat: location.latitude, lng: location.longitude })} */}
               <MarkerF
                 position={{ lat: location.latitude, lng: location.longitude }}
                 onClick={() => setSelectedPlace(nearbyPlace)}
@@ -215,13 +208,13 @@ function LocationSharing() {
                     : undefined
                 }
                 label={{
-                  text: '',
+                  text: '👤',
                   color: 'white',
                   fontSize: '14px',
                   fontWeight: 'bold'
                 }}
               />
-              {console.log('Marker position:', { lat: location.latitude, lng: location.longitude })}
+              {/* {console.log('Marker position:', { lat: location.latitude, lng: location.longitude })} */}
               {selectedPlace && selectedPlace.geometry && (
                 <InfoWindow
                   position={{
@@ -236,7 +229,7 @@ function LocationSharing() {
                   </div>
                 </InfoWindow>
               )}
-              {console.log('Marker position:', { lat: location.latitude, lng: location.longitude })}
+              {/* {console.log('Marker position:', { lat: location.latitude, lng: location.longitude })} */}
             </GoogleMap>
           </ErrorBoundary>
         </div>
